@@ -12,45 +12,107 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
 ?>
 
 <?php
-// Assuming you have already established a database connection
-include("connect.php");
+function insertIntoMembersTable($conn, $data)
+{
+    // Check if EmpNo exists and is not empty
+    if (!empty($data[2])) {
+        // Prepare the SQL statement for checking EmpNo existence
+        $stmtCheckEmpNo = $conn->prepare("SELECT COUNT(*) FROM members WHERE EmpNo = ?");
+        $stmtCheckEmpNo->bind_param("s", $data[2]);
+        $stmtCheckEmpNo->execute();
+        $stmtCheckEmpNo->bind_result($empCount);
+        $stmtCheckEmpNo->fetch();
+        $stmtCheckEmpNo->close();
 
-// Check if the form has been submitted
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Retrieve the amount and payment date from the form
-    $amount = $_POST['amount'];
-    $paymentDate = $_POST['payment_date'];
-    $RTGs =$_POST['RTGs'];
-
-    // SQL query to fetch member details and their last payment date
-    $sql = "SELECT members.id, members.EmpNo, members.Surname, members.First_name
-            FROM members";
-
-    $result = mysqli_query($conn, $sql);
-
-    // Insert payment records for each member
-    while ($row = mysqli_fetch_assoc($result)) {
-        $memberId = $row['id'];
-        $empNo = $row['EmpNo'];
-        $surname = $row['Surname'];
-        $firstName = $row['First_name'];
-
-        // Insert the payment into the payments table
-        $insertSql = "INSERT INTO payments (id, EmpNo, Surname, First_name, Amount, paymentDate, RTGs)
-                      VALUES ('$memberId', '$empNo', '$surname', '$firstName', '$amount', '$paymentDate' , '$RTGs')";
-
-        mysqli_query($conn, $insertSql);
+        if ($empCount == 0) {
+            // Prepare the SQL statement for members table
+            $stmtMembers = $conn->prepare("INSERT INTO members (Surname, First_name, EmpNo, NatRegNo, DOB, AppDate, StationDescription, Descriptions, Province, Department, Statcode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            
+            // Bind the CSV values to the prepared statement for members table
+            $stmtMembers->bind_param("sssssssssss", $data[0], $data[1], $data[2], $data[3], $data[4], $data[5], $data[6], $data[7], $data[8], $data[9], $data[10]);
+            
+            // Execute the statement for members table
+            $stmtMembers->execute();
+            
+            $stmtMembers->close();
+        }
     }
+}
 
-    // Close the database connection
-    mysqli_close($conn);
+// Check if the form is submitted
+if (isset($_POST["submit"])) {
+    // Check if a file is uploaded
+    if ($_FILES["csv_file"]["error"] == UPLOAD_ERR_OK && $_FILES["csv_file"]["tmp_name"] != "") {
+        // Get the file extension
+        $extension = pathinfo($_FILES["csv_file"]["name"], PATHINFO_EXTENSION);
 
-    echo '<script>alert("All member monthly payments have been made. now view the payments table");</script>';
+        // Check if the file is a CSV
+        if (strtolower($extension) == "csv") {
+            // Database connection details
+            include('connect.php');
 
-    // Delay the redirect using JavaScript
-    echo '<script>setTimeout(function() { window.location.href = "paytable.php"; }, 2000);</script>';
+            // Create a database connection
+            $conn = new mysqli($dbHost, $dbUser, $dbPass, $dbName);
+
+            // Check the connection
+            if ($conn->connect_error) {
+                die("Connection failed: " . $conn->connect_error);
+            }
+
+            // Check if the file has already been uploaded
+            $stmt = $conn->prepare("SELECT COUNT(*) FROM rtgs_payments WHERE file_name = ?");
+            $stmt->bind_param("s", $_FILES["csv_file"]["name"]);
+            $stmt->execute();
+            $stmt->bind_result($fileCount);
+            $stmt->fetch();
+            $stmt->close();
+
+            if ($fileCount > 0) {
+                echo '<script>alert("This file has already been uploaded.");</script>';
+            } else {
+                // Prepare the SQL statement for rtgs_payments table
+                $stmtPayments = $conn->prepare("INSERT INTO rtgs_payments (Surname, First_name, EmpNo, NatRegNo, DOB, AppDate, StationDescription, Descriptions, Province, Department, Statcode, Amount, paymentDate, file_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+                // Open the CSV file for reading
+                if (($handle = fopen($_FILES["csv_file"]["tmp_name"], "r")) !== FALSE) {
+
+                    // Skip the header row
+                    fgetcsv($handle, 1000, ",");
+                    
+                    // Read each row of the CSV file
+                    while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+                        // Get the payment date from the form
+                        $paymentDate = $_POST['payment_date'];
+
+                        // Bind the CSV values, payment date, and additional values to the prepared statement for rtgs_payments table
+                        $stmtPayments->bind_param("ssssssssssssss", $data[0], $data[1], $data[2], $data[3], $data[4], $data[5], $data[6], $data[7], $data[8], $data[9], $data[10], $data[11], $paymentDate, $_FILES["csv_file"]["name"]);
+
+                        // Execute the statement for rtgs_payments table
+                        $stmtPayments->execute();
+
+                        // Insert into members table if EmpNo does not exist
+                        insertIntoMembersTable($conn, $data);
+                    }
+
+                    // Close the CSV file
+                    fclose($handle);
+                }
+
+                // Close the statements and database connection
+                $stmtPayments->close();
+                $conn->close();
+                
+                echo '<script>alert("CSV file uploaded successfully.");</script>';
+            }
+        } else {
+            echo '<script>alert("Only CSV files are allowed.");</script>';
+        }
+    } else {
+        echo '<script>alert("Please choose a file to upload.");</script>';
+    }
 }
 ?>
+
 
 <!doctype html>
 <html lang="en">
@@ -165,7 +227,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     
   <div class="jumbotron">
-  <h1 style="color:#144a0b; text-align: center; font-size: 50px; font-weight: bolder; font-family: helvetica; text-shadow: 6px 6px 6px #dcf4da;">Every Member Paying</h1><br>
+  <h1 style="color:#144a0b; text-align: center; font-size: 50px; font-weight: bolder; font-family: helvetica; text-shadow: 6px 6px 6px #dcf4da;">MONTHLY RTGs PAYMENTS</h1><br>
 
     <div class="container my-4">
         <header class="d-flex justify-content-between my-4">
@@ -178,28 +240,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div style="display: flex; flex-direction: column; justify-content: space-between;">
         <ul class="list-group list-group-flush">
             <div class="card border-success mb-3" style="max-width: 30rem; margin-top: 50px;">
-            <div class="card-header bg-success text-white">Add Uniform Payment for every member</div>
-            <div class="card-body">
+            <div class="card-header bg-success text-white">RTGs Payment</div>
+                <div class="card-body">
 
 
-            <form method="POST" action="allpay.php">
-            
-            <div class="input-group mb-3" >
-                <span class="input-group-text" id="basic-addon1">USD</span>
-                <input type="number" step="1" class="form-control" name="amount"  placeholder="Enter USD Amount"  aria-label="USD" aria-describedby="basic-addon1" value="<?php echo isset($_POST['Amount']) ? $_POST['Amount'] : 0; ?>" required >
-            </div>
-            <div class="input-group mb-3" >
-                <span class="input-group-text" id="basic-addon1">Date</span>
-                <input type="date" class="form-control" name="payment_date"  placeholder="Enter paymentDate Amount"  aria-label="paymentDate" aria-describedby="basic-addon1" required>
-            </div>
-            <div class="input-group mb-3" >
-                <span class="input-group-text" id="basic-addon1">Edited By</span>
-                <input type="text" class="form-control" name="RTGs"  placeholder="Enter your name"  aria-label="RTGs" aria-describedby="basic-addon1"  required >
-            </div>
-            <div class="input-group mb-3" >
-                <input type="submit" step="1" value="Add Payment" class="form-control btn btn-outline-success" aria-describedby="basic-addon1" >
-            </div>
-            </form>
+                <form method="post" enctype="multipart/form-data">
+                    <input type="file" name="csv_file" accept=".csv"><br>
+                    <label for="payment_date">Payment Date:</label>
+                    <input type="date" name="payment_date" id="payment_date" required ><br>
+                    <input type="submit" name="submit" value="Upload">
+                </form>
+
 
             </div>
         </div>

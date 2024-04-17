@@ -125,9 +125,13 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
             if (isset($_GET['id'])) {
                 include("connect.php");
                 $id = $_GET['id'];
-                $sql = "SELECT * FROM members WHERE id=$id";
-                $result = mysqli_query($conn,$sql);
+                $sql = "SELECT * FROM members WHERE id=?";
+                $stmt = mysqli_prepare($conn, $sql);
+                mysqli_stmt_bind_param($stmt, "i", $id); // Assuming id is an integer
+                mysqli_stmt_execute($stmt);
+                $result = mysqli_stmt_get_result($stmt);
                 $row = mysqli_fetch_array($result);
+
                 ?>
 
             <div class="input-group mb-3">

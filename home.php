@@ -207,10 +207,10 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
         $currentYear = date('Y');
 
         // SQL query to fetch payments made in the current month
-        $sql = "SELECT payments.id, payments.Amount, payments.paymentDate, members.Surname, members.First_name, members.EmpNo
-                FROM payments
-                INNER JOIN members ON payments.id = members.id
-                WHERE MONTH(payments.paymentDate) = $currentMonth AND YEAR(payments.paymentDate) = $currentYear";
+        $sql = "SELECT usd_payments.id, usd_payments.Amount, usd_payments.paymentDate, members.Surname, members.First_name, members.EmpNo
+                FROM usd_payments
+                INNER JOIN members ON usd_payments.id = members.id
+                WHERE MONTH(usd_payments.paymentDate) = $currentMonth AND YEAR(usd_payments.paymentDate) = $currentYear";
 
         // Execute the query
         $result = mysqli_query($conn, $sql);
@@ -229,20 +229,31 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
         ?>
 
     <div class="card">
-        <div class="card-title">Current Month Payments</div>
-        <p class="text"><?php echo $totalAmount; ?></p>
+        <div class="card-title">Monthly USD Payments</div>
+
         <div>
-            <a href="monthlypaid.php" class="btn btn-outline-success my-2 my-sm-0">View Payments</a>
+            <a href="paytable.php" class="btn btn-outline-success my-2 my-sm-0">View Payments</a>
         </div>
     </div>
     </div>
 
     <div class="card-container">
 
+    <div class="card">
+        <div class="card-title">RTGs Payments</div>
+
+        <div>
+            <a href="rtgs_paytable.php" class="btn btn-outline-secondary my-2 my-sm-0">View Payments</a>
+        </div>
+    </div>
+    
+
+   
+
     <?php
 
         
-        $sqlSelect = "SELECT * FROM payments";
+        $sqlSelect = "SELECT * FROM usd_payments";
         $result = mysqli_query($conn, $sqlSelect);
 
         // Calculate the total amount
@@ -258,47 +269,21 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
         
         ?>
         <div class="card">
-            <div class="card-title">All Payments amount</div>
-            <p class="text"><?php echo $totalAmount; ?></p>
-            <div>
-                <a href="paytable.php" class="btn btn-outline-secondary my-2 my-sm-0">View Payments</a>
-            </div>
-        </div>
-
-        <?php
-            // Prepare the SQL query to retrieve members who haven't paid
-            $sql = "SELECT COUNT(*) AS memberCount
-            FROM members
-            LEFT JOIN payments ON members.id = payments.id AND MONTH(payments.paymentDate) = $currentMonth AND YEAR(payments.paymentDate) = $currentYear
-            WHERE payments.id IS NULL";
-
-            // Execute the query
-            $result = mysqli_query($conn, $sql);
-
-            // Fetch the result
-            $row = mysqli_fetch_assoc($result);
-            $memberCount = $row['memberCount'];
-
-            // Close the database connection
-            mysqli_close($conn);
-
+            <div class="card-title">Current owing amounts(USD)</div>
             
-            ?>
-
-        <div class="card">
-        <div class="card-title">Members Owing</div>
-            <p class="text"><?php echo $memberCount; ?></p>
             <div>
-                <a href="monthlynotpaid.php" class="btn btn-outline-secondary my-2 my-sm-0">View Pending</a>
+                <a href="monthlynotpaid.php" class="btn btn-outline-danger my-2 my-sm-0">View owings</a>
             </div>
         </div>
 
+        
+
 
         <div class="card">
-        <div class="card-title">Uniform payment</div>
+        <div class="card-title">Add USD payment</div>
 
             <div>
-                <a href="allpay.php" class="btn btn-outline-secondary my-2 my-sm-0">Add</a>
+                <a href="usd_payments.php" class="btn btn-outline-secondary my-2 my-sm-0">Add</a>
             </div>
         </div>
 

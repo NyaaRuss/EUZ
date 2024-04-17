@@ -173,8 +173,7 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
                     echo "<td>" . $row['Province'] . "</td>";
                     echo "<td>";
                     echo "<a href='pastview.php?id=" . $row['id'] . "' class='btn btn-outline-success my-2 my-sm-0'><i class='fas fa-eye'></i></a>";
-                    echo "<a href='restore.php?id=" . $row['id'] . "' class='btn btn-outline-secondary'><i class='fas fa-undo'></i></a>";
-                    
+                    echo "<a href='restore.php?id=" . $row['id'] . "' class='btn btn-outline-secondary'><i class='fas fa-undo'></i></a>";            
                     echo "</td>";
                     echo "</tr>";
                 }

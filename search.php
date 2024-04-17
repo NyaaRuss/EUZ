@@ -118,12 +118,21 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
             <div>
                 <a href="create.php" class="btn btn-outline-success my-2 my-sm-0">Add New Member</a>
             </div>
+
             <div>
-                <a href="paytable.php" class="btn btn-outline-secondary my-2 my-sm-0">Member Payments</a>
+                <a href="paytable.php" class="btn btn-outline-secondary my-2 my-sm-0">All USD Payments</a>
+            </div>
+
+            <div>
+                <a href="rtgs_paytable.php" class="btn btn-outline-success my-2 my-sm-0">RTGs Payments</a>
+            </div>
+
+            <div>
+                <a href="monthlynotpaid.php" class="btn btn-outline-danger my-2 my-sm-0">View Pending payments</a>
             </div>
         </header>
 
-        <form method="GET" action="crow.php" class="search-form">
+        <form method="GET" action="search.php" class="search-form">
             <input type="text" name="search" placeholder="Enter EmpNo" class="search-input">
             <button type="submit" class="search-button">Search</button>
         </form>
@@ -158,16 +167,16 @@ if(isset($_GET['search'])){
     $currentYear = date('Y');
 
     // SQL query to fetch the most recent payment for each member and include members who didn't pay
-    $sql = "SELECT members.id, members.EmpNo, members.Surname, members.First_name, payments.paymentDate
+    $sql = "SELECT members.id, members.EmpNo, members.Surname, members.First_name,usd_payments.paymentDate
             FROM members
-            LEFT JOIN payments ON members.id = payments.id 
-                AND MONTH(payments.paymentDate) = $currentMonth 
-                AND YEAR(payments.paymentDate) = $currentYear
+            LEFT JOIN usd_payments ON members.id = usd_payments.id 
+                AND MONTH(usd_payments.paymentDate) = $currentMonth 
+                AND YEAR(usd_payments.paymentDate) = $currentYear
             WHERE members.EmpNo LIKE '%$search%'
-            AND (payments.paymentDate IS NULL 
-                OR payments.paymentDate = (
+            AND (usd_payments.paymentDate IS NULL 
+                OR usd_payments.paymentDate = (
                     SELECT MAX(paymentDate) 
-                    FROM payments 
+                    FROM usd_payments 
                     WHERE id = members.id 
                     AND MONTH(paymentDate) = $currentMonth 
                     AND YEAR(paymentDate) = $currentYear
@@ -193,8 +202,9 @@ if(isset($_GET['search'])){
                        class="btn btn-outline-success my-2 my-sm-0"><i class="fas fa-eye"></i></a>
                     <a href="edit.php?id=<?php echo $row['id']; ?>" class="btn btn-warning"><i
                                 class="fas fa-edit" style="font-weight: normal;"></i></a>
-                    <a href="confirm.php?id=<?php echo $row['id']; ?>" class="btn btn"><img
-                                src="img/del.png" height="20px" width="20px"/></a>
+                    <a href="confirm.php?id=<?php echo isset($row['id']) ? $row['id'] : ''; ?>" 
+                                class="btn btn-danger"><i class="fas fa-trash"></i></a>
+
                 </td>
             </tr>
             <?php

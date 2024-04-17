@@ -272,10 +272,7 @@
                     <span class="input-group-text" id="basic-addon1">STAT CODE</span>
                     <input type="text" class="form-control" name="Statcode"  placeholder="Enter Member's Statcode"  aria-label="Statcode" required >
                 </div> 
-                <div class="input-group mb-3" >
-                    <span class="input-group-text" id="basic-addon1">AMOUNT</span>
-                    <input type="number" step="1" class="form-control" name="Amount"  placeholder="Enter Member's Amount"  aria-label="Amount" required >
-                </div> 
+                
             
             <div class="form-element my-4">
                 <input type="submit" name="create" value="Add Member" class="btn btn-success">

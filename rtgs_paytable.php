@@ -118,7 +118,7 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
     
     
   <div class="jumbotron">
-  <h1 style="color:#144a0b; text-align: center; font-size: 50px; font-weight: bolder; font-family: helvetica; text-shadow: 6px 6px 6px #dcf4da;">This month payments</h1><br>
+  <h1 style="color:#144a0b; text-align: center; font-size: 50px; font-weight: bolder; font-family: helvetica; text-shadow: 6px 6px 6px #dcf4da;">RTGs payments table</h1><br>
 
     <div class="container my-4">
         <header class="d-flex justify-content-between my-4">
@@ -128,15 +128,12 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
             </div>
 
             <div>
-                <a href="paytable.php" class="btn btn-outline-secondary my-2 my-sm-0">All Payments</a>
+                <a href="paytable.php" class="btn btn-outline-secondary my-2 my-sm-0">All USD Payments</a>
             </div>
 
-            <div>
-                <a href="monthlynotpaid.php" class="btn btn-outline-danger my-2 my-sm-0">View Pending payments</a>
-            </div>
         </header>
 
-        <form method="GET" action="search.php" class="search-form">
+        <form method="GET" action="paysearch.php" class="search-form">
             <input type="text" name="search" placeholder="Enter EmpNo" class="search-input">
             <button type="submit" class="search-button">Search</button>
         </form>
@@ -188,96 +185,132 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
                 <th>EmpNo</th>
                 <th>First_name</th>
                 <th>Surname</th>
-                <th>Amount(USD)</th>
+                <th>Amount(rtgs)</th>
                 <th>Monthly Payment</th>
                 <th>Action</th>
             </tr>
         </thead>
         <tbody>
-        
+
+<?php
+// Database connection code
+include("connect.php");
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Number of rows per page
+$rowsPerPage = 20;
+
+// Get the current page number
+if (isset($_GET['page'])) {
+    $currentPage = $_GET['page'];
+} else {
+    $currentPage = 1;
+}
+
+// Calculate the starting row index for the current page
+$startRow = ($currentPage - 1) * $rowsPerPage;
+
+$currentMonth = date('m');
+$currentYear = date('Y');
+
+// Handle form submission for selecting month
+if (isset($_POST['month'])) {
+    $selectedMonth = $_POST['month'];
+    $selectedYear = $_POST['year'];
+} else {
+    $selectedMonth = $currentMonth;
+    $selectedYear = $currentYear;
+}
+
+// SQL query to fetch payments made in the selected month
+$sql = "SELECT rtgs_payments.id, rtgs_payments.Amount, rtgs_payments.paymentDate, members.Surname, members.First_name, members.EmpNo
+        FROM rtgs_payments
+        INNER JOIN members ON rtgs_payments.id = members.id
+        WHERE MONTH(rtgs_payments.paymentDate) = $selectedMonth AND YEAR(rtgs_payments.paymentDate) = $selectedYear
+        LIMIT $startRow, $rowsPerPage";
+
+$result = $conn->query($sql);
+
+if ($result->num_rows > 0) {
+    // Output data of each row
+    while ($row = $result->fetch_assoc()) {
+        ?>
+        <tr>
+            <td><?php echo $row['id']; ?></td>
+            <td><?php echo $row['EmpNo']; ?></td>
+            <td><?php echo $row['First_name']; ?></td>
+            <td><?php echo $row['Surname']; ?></td>
+            <td><?php echo $row['Amount']; ?></td>
+            <?php if (!empty($row["paymentDate"])): ?>
+                <td><?php echo $row['paymentDate']; ?></td>
+            <?php else: ?>
+                <td><p>Pending</p></td>
+            <?php endif; ?>
+            <td>
+                <a href="view.php?id=<?php echo $row['id']; ?>" class="btn btn-outline-success my-2 my-sm-0"><i
+                            class="fas fa-eye"></i></a>
+                <a href="edit.php?id=<?php echo $row['id']; ?>" class="btn btn-warning"><i
+                            class="fas fa-edit" style="font-weight: normal;"></i></a>
+
+            </td>
+        </tr>
+
+        <?php
+
+    }
+} else {
+    echo "No members found.";
+}
+
+// Pagination links
+$sql = "SELECT COUNT(*) AS totalCount FROM rtgs_payments WHERE MONTH(paymentDate) = $selectedMonth AND YEAR(paymentDate) = $selectedYear"; // Query to get the total number of rows for the selected month
+$totalResult = $conn->query($sql);
+$totalRow = $totalResult->fetch_assoc()['totalCount'];
+$totalPages = ceil($totalRow / $rowsPerPage);
+
+echo "<div class='pagination'>";
+if ($currentPage > 1) {
+    echo "<a href='?page=".($currentPage - 1)."&month=$selectedMonth&year=$selectedYear' class='btn btn-outline-success'>Previous page</a>";
+}
+if ($currentPage < $totalPages) {
+    echo "<a href='?page=".($currentPage + 1)."&month=$selectedMonth&year=$selectedYear' class='btn btn-outline-success'>Next page</a>";
+}
+echo "</div>";
+
+// Close the database connection
+$conn->close();
+?>
+
+</tbody>
+</table>
+
+<!-- Form for selecting month -->
+<form method="post" action="">
+    <label for="month">Select Month:</label>
+    <select name="month" id="month">
+        <?php
+        for ($m = 1; $m <= 12; $m++) {
+            $monthName = date('F', mktime(0, 0, 0, $m, 1));
+            echo "<option value='$m' ".($m == $selectedMonth ? 'selected' : '').">$monthName</option>";
+        }
+        ?>
+    </select>
+    <label for="year">Select Year:</label>
+    <select name="year" id="year">
+        <?php
+        $startYear = date("Y") - 10; // Adjust this number as needed
+        $endYear = date("Y") + 10; // Adjust this number as needed
+        for ($year = $startYear; $year <= $endYear; $year++) {
+            echo "<option value='$year' ".($year == $selectedYear ? 'selected' : '').">$year</option>";
+        }
+        ?>
+    </select>
+    <input type="submit" value="Show Payments">
+</form>
 
 
-            <?php
-                // Database connection code
-                include("connect.php");
-                if ($conn->connect_error) {
-                    die("Connection failed: " . $conn->connect_error);
-                }
-
-                // Number of rows per page
-                $rowsPerPage = 20;
-
-                // Get the current page number
-                if (isset($_GET['page'])) {
-                    $currentPage = $_GET['page'];
-                } else {
-                    $currentPage = 1;
-                }
-
-                // Calculate the starting row index for the current page
-                $startRow = ($currentPage - 1) * $rowsPerPage;
-
-                // Get the current month and year
-                $currentMonth = date('m');
-                $currentYear = date('Y');
-
-                // SQL query to fetch payments made in the current month
-                $sql = "SELECT payments.id, payments.Amount, payments.paymentDate, members.Surname, members.First_name , members.EmpNo
-                        FROM payments
-                        INNER JOIN members ON payments.id = members.id
-                        WHERE MONTH(payments.paymentDate) = $currentMonth AND YEAR(payments.paymentDate) = $currentYear";
-
-                $result = $conn->query($sql);
-
-                if ($result->num_rows > 0) {
-                    // Output data of each row
-                    while($row = $result->fetch_assoc()) {
-                        ?>
-                            <tr>
-                                <td><?php echo $row['id']; ?></td>
-                                <td><?php echo $row['EmpNo']; ?></td>
-                                <td><?php echo $row['First_name']; ?></td>
-                                <td><?php echo $row['Surname']; ?></td>
-                                <td><?php echo $row['Amount']; ?></td>
-                                <?php if (!empty($row["paymentDate"])): ?>
-                                    <td><?php echo $row['paymentDate']; ?></td>
-                                <?php else: ?>
-                                    <td><p>Pending</p></td>
-                                <?php endif; ?>
-                                <td>
-                                    <a href="view.php?id=<?php echo $row['id']; ?>" class="btn btn-outline-success my-2 my-sm-0"><i class="fas fa-eye"></i></a>
-                                    <a href="edit.php?id=<?php echo $row['id']; ?>" class="btn btn-warning"><i class="fas fa-edit" style="font-weight: normal;"></i></a>
-                                    
-                                </td>
-                            </tr>
-
-                        <?php
-
-                    }
-                } else {
-                    echo "No members found.";
-                }
-
-                // Pagination links
-                $sql = "SELECT COUNT(*) AS totalCount FROM members"; // Query to get the total number of rows
-                $totalResult = $conn->query($sql);
-                $totalRow = $totalResult->fetch_assoc()['totalCount'];
-                $totalPages = ceil($totalRow / $rowsPerPage);
-
-                echo "<div class='pagination'>";
-                if ($currentPage > 1) {
-                    echo "<a href='?page=".($currentPage - 1)." ' class='btn btn-outline-success'>Previous page</a>";
-                }
-                if ($currentPage < $totalPages) {
-                    echo "<a href='?page=".($currentPage + 1)." 'class='btn btn-outline-success'>Next page</a>";
-                }
-                echo "</div>";
-
-                // Close the database connection
-                $conn->close();
-                ?>
-        </tbody>
-        </table>
     </div>
     </div>
     </div>
@@ -287,4 +320,4 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
 
 </body>
-</html>
+</html> 

@@ -17,7 +17,7 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
     <meta name="description" content="">
     <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
     <meta name="generator" content="Jekyll v3.8.6">
-    <title>EUZ</title>
+    <title>EUZ USD owing members</title>
 
     <link rel="canonical" href="https://getbootstrap.com/docs/4.4/examples/navbar-fixed/">
 
@@ -118,7 +118,7 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
     
     
   <div class="jumbotron">
-  <h1 style="color:#144a0b; text-align: center; font-size: 50px; font-weight: bolder; font-family: helvetica; text-shadow: 6px 6px 6px #dcf4da;">This Month's Pending Payments</h1><br>
+  <h1 style="color:#144a0b; text-align: center; font-size: 50px; font-weight: bolder; font-family: helvetica; text-shadow: 6px 6px 6px #dcf4da;">This Month's Pending USD Payments</h1><br>
 
     <div class="container my-4">
         <header class="d-flex justify-content-between my-4">
@@ -128,12 +128,9 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
             </div>
 
             <div>
-                <a href="paytable.php" class="btn btn-outline-secondary my-2 my-sm-0">All Payments</a>
+                <a href="paytable.php" class="btn btn-outline-secondary my-2 my-sm-0">All USD Payments</a>
             </div>
 
-            <div>
-                <a href="monthlypaid.php" class="btn btn-outline-success my-2 my-sm-0">View Paid payments</a>
-            </div>
         </header>
 
         <form method="GET" action="search.php" class="search-form">
@@ -223,8 +220,8 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
     // SQL query to fetch members who have not made payments in the current month
     $sql = "SELECT members.id, members.EmpNo, members.Surname, members.First_name
             FROM members
-            LEFT JOIN payments ON members.id = payments.id AND MONTH(payments.paymentDate) = $currentMonth AND YEAR(payments.paymentDate) = $currentYear
-            WHERE payments.id IS NULL
+            LEFT JOIN usd_payments ON members.id = usd_payments.id AND MONTH(usd_payments.paymentDate) = $currentMonth AND YEAR(usd_payments.paymentDate) = $currentYear
+            WHERE usd_payments.id IS NULL
             LIMIT $startRow, $rowsPerPage";
 
     $result = $conn->query($sql);

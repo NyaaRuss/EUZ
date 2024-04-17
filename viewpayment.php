@@ -126,8 +126,10 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
         <header class="d-flex justify-content-between my-4">
             
             <div>
-                <a href="paytable.php" class="btn btn-outline-secondary my-2 my-sm-0">All payments</a>
+                <a href="paytable.php" class="btn btn-outline-secondary my-2 my-sm-0">All USD payments</a>
             </div> 
+
+            
         </header>
 
         <form method="GET" action="paysearch.php" class="search-form">
@@ -145,7 +147,7 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
         $id = $_GET['id'];
 
         // Prepare the SQL query
-        $query = "SELECT * FROM payments WHERE id = '$id'"; // Replace your_table and column_name with your actual table and column names
+        $query = "SELECT * FROM usd_payments WHERE id = '$id'"; // Replace your_table and column_name with your actual table and column names
 
         // Execute the query
         $result = mysqli_query($conn, $query); // Replace $connection with your actual database connection variable
@@ -163,7 +165,7 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
                 echo "<th>EmpNo</th>";
                 echo "<th>First Name</th>";
                 echo "<th>Surname</th>";
-                echo "<th>Edited By</th>";
+                
                 echo "<th>USD</th>";
                 echo "<th>Action</th>";
                 echo "</tr>";
@@ -178,20 +180,23 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
                     echo "<td>" . $row['EmpNo'] . "</td>";
                     echo "<td>" . $row['First_name'] . "</td>";
                     echo "<td>" . $row['Surname'] . "</td>";
-                    echo "<td>" . $row['RTGs'] . "</td>";
+                    
                     echo "<td>" . $row['Amount'] . "</td>";
                     echo "<td>";
-                    echo "<a href='view.php?id=" . $row['id'] . "' class='btn btn-warning'><i class='fas fa-edit' style='font-weight: normal;'></i></a>";
+                    echo "<a href='view.php?id=" . $row['id'] . "' class='btn btn-outline-success'><i class='fas fa-eye'></i></a>";
                     
                     echo "</td>";
                     echo "</tr>";
 
-                    
+                    echo "</table>";
+                     
                 }
 
                 // Close the table
-                echo "</table>";
+                
                 echo "</div>";
+
+                
                     
             } else {
                 echo "No payment matching member found.";

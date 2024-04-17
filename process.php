@@ -1,4 +1,14 @@
 <?php
+session_start();
+
+// Check if the user is logged in, if not, redirect to login page
+if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
+    header("location: login.php");
+    exit;
+}
+?>
+
+<?php
 include('connect.php');
 if (isset($_POST["create"])) {
     $Surname = mysqli_real_escape_string($conn, $_POST["Surname"]);
@@ -12,8 +22,8 @@ if (isset($_POST["create"])) {
     $Descriptions = mysqli_real_escape_string($conn, $_POST["Descriptions"]);
     $Department = mysqli_real_escape_string($conn, $_POST["Department"]);
     $Statcode = mysqli_real_escape_string($conn, $_POST["Statcode"]);
-    $Amount = mysqli_real_escape_string($conn, $_POST["Amount"]);
-    $sqlInsert = "INSERT INTO members(Surname , NatRegNo , EmpNo , First_name ,  Province, DOB , AppDate , StationDescription , Descriptions , Department , Statcode , Amount) VALUES ('$Surname','$NatRegNo','$EmpNo', '$Province' , '$First_name' , '$DOB' ,'$AppDate' , '$StationDescription' , '$Description' , '$Department' , '$Statcode' , '$Amount' )";
+    
+    $sqlInsert = "INSERT INTO members(Surname , NatRegNo , EmpNo , First_name ,  Province, DOB , AppDate , StationDescription , Descriptions , Department , Statcode) VALUES ('$Surname','$NatRegNo','$EmpNo', '$Province' , '$First_name' , '$DOB' ,'$AppDate' , '$StationDescription' , '$Description' , '$Department' , '$Statcode' )";
     if(mysqli_query($conn,$sqlInsert)){
         session_start();
         $_SESSION["create"] = "member Added Successfully!";

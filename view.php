@@ -221,10 +221,7 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
                  ?>
                  
                 <div class="form-group">
-                   <div>
-                        <h5>EMPNO</h5>
-                        <p><?php echo $row["EmpNo"]; ?></p>
-                    </div>
+                   
                     <div>
                         <h5>SURNAME</h5>
                         <p><?php echo $row["Surname"]; ?></p>
@@ -235,57 +232,61 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
                     </div>
                 </div>
                 <div class="form-group">
-                    
+                    <div>
+                        <h5>EMPNO</h5>
+                        <p><?php echo $row["EmpNo"]; ?></p>
+                    </div>
                     <div>
                         <h5>PROVINCE</h5>
                         <p><?php echo $row["Province"]; ?></p>
                     </div>
+                    
+                </div>
+                <div class="form-group">
                     <div>
                         <h5>DISTRICT</h5>
                         <p><?php echo $row["Descriptions"]; ?></p>
                     </div>
-                </div>
-                <div class="form-group">
                     <div>
                         <h5>YEARS LEFT(65)</h5>
                         <p><?php echo $yearsLeft ?></p>
                     </div>
                     
+                    
+                </div>
+                <div class="form-group">
                     <div>
                         <h5>DOB</h5>
                         <p><?php echo $row["DOB"]; ?></p>
                     </div>
-                </div>
-                <div class="form-group">
                     <div>
                         <h5>APP DATE</h5>
                         <p><?php echo $row["AppDate"]; ?></p>
                     </div>
-                    <div>
-                        <h5>STATION DESCRIPTION</h5>
-                        <p><?php echo $row["StationDescription"]; ?></p>
-                    </div>
+                    
                 </div>
                 
                 <div class="form-group">
                     <div>
+                        <h5>STATION DESCRIPTION</h5>
+                        <p><?php echo $row["StationDescription"]; ?></p>
+                    </div>
+                    <div>
                         <h5>DEPARTMENT</h5>
                         <p><?php echo $row["Department"]; ?></p>
                     </div>
+                    
+                </div>
+                <div class="form-group">
                     <div>
                         <h5>STAT CODE</h5>
                         <p><?php echo $row["Statcode"]; ?></p>
                     </div>
-                </div>
-                <div class="form-group">
                     <div>
                         <h5>NATIONAL REG #</h5>
                         <p><?php echo $row["NatRegNo"]; ?></p>
                     </div>
-                    <div>
-                        <h5>USD TOTAL</h5>
-                        <p><?php echo $row["Amount"]; ?></p>
-                    </div>
+                    
 
                 </div>
                 <div class="form-group">
@@ -301,6 +302,9 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
                     <div>
                         <a href="confirm.php?id=<?php echo $row['id']; ?>" class="btn btn-outline-danger">Delete Member</a>
                     </div>
+
+                    
+                    
                 </div>
                  <?php
                 }

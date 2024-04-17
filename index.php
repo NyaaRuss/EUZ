@@ -132,11 +132,11 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
             </div>
 
             <div>
-                <a href="paytable.php" class="btn btn-outline-secondary my-2 my-sm-0">All Payments</a>
+                <a href="paytable.php" class="btn btn-outline-secondary my-2 my-sm-0">All USD Payments</a>
             </div>
 
             <div>
-                <a href="monthlypaid.php" class="btn btn-outline-success my-2 my-sm-0">Paid Payments</a>
+                <a href="rtgs_paytable.php" class="btn btn-outline-success my-2 my-sm-0">RTGs Payments</a>
             </div>
 
             <div>
@@ -193,6 +193,7 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
         <thead>
             <tr>
                 <th>#</th>
+              
                 <th>EmpNo</th>
                 <th>First_name</th>
                 <th>Surname</th>
@@ -204,109 +205,92 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
         
 
 
-                    <?php
-                // Database connection code
-                include("connect.php");
-                if ($conn->connect_error) {
-                    die("Connection failed: " . $conn->connect_error);
-                }
+        <?php
+// Database connection code
+include("connect.php");
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
 
-                // Number of rows per page
-                $rowsPerPage = 20;
+// Number of rows per page
+$rowsPerPage = 20;
 
-                // Get the current page number
-                if (isset($_GET['page'])) {
-                    $currentPage = $_GET['page'];
-                } else {
-                    $currentPage = 1;
-                }
+// Get the current page number
+if (isset($_GET['page'])) {
+    $currentPage = $_GET['page'];
+} else {
+    $currentPage = 1;
+}
 
-                // Calculate the starting row index for the current page
-                $startRow = ($currentPage - 1) * $rowsPerPage;
+// Calculate the starting row index for the current page
+$startRow = ($currentPage - 1) * $rowsPerPage;
 
-                // Get the current month and year
-                $currentMonth = date('m');
-                $currentYear = date('Y');
+// Retrieve records from the members table
+$sql = "SELECT id, EmpNo, Surname, NatRegNo, First_name, Province, DOB, AppDate, StationDescription, Descriptions, Department, Statcode, SUM(Amount) AS TotalAmount
+        FROM members
+        GROUP BY EmpNo 
+        LIMIT $startRow, $rowsPerPage";
 
-                // SQL query to fetch the most recent payment for each member and include members who didn't pay
-                $sql = "SELECT members.id, members.EmpNo, members.Surname, members.First_name, 
-                                payments.paymentDate
-                        FROM members
-                        LEFT JOIN payments ON members.id = payments.id 
-                            AND MONTH(payments.paymentDate) = $currentMonth 
-                            AND YEAR(payments.paymentDate) = $currentYear
-                        WHERE (payments.paymentDate IS NULL 
-                            OR (payments.paymentDate = (
-                                        SELECT MAX(paymentDate) 
-                                        FROM payments 
-                                        WHERE id = members.id 
-                                        AND MONTH(paymentDate) = $currentMonth 
-                                        AND YEAR(paymentDate) = $currentYear
-                                    ))
-                            )
-                        ORDER BY COALESCE(payments.paymentDate, '0000-00-00') ASC, members.EmpNo ASC
-                        LIMIT $startRow, $rowsPerPage"; // Add LIMIT clause for pagination
+// Execute the query
+$result = $conn->query($sql);
 
-                // Execute the query
-                $result = $conn->query($sql);
+if ($result->num_rows > 0) {
+    $count = ($currentPage - 1) * $rowsPerPage + 1;
 
-                if ($result->num_rows > 0) {
-                    $count = ($currentPage - 1) * $rowsPerPage + 1; // Calculate the current count
-                    
-                    while($row = $result->fetch_assoc()) {
-                        ?>
-                        <tr>
-                            <td><?php echo $count++; ?></td> <!-- Display the count -->
-                            <td><?php echo $row['EmpNo']; ?></td>
-                            <td><?php echo $row['First_name']; ?></td>
-                            <td><?php echo $row['Surname']; ?></td>
-                            <?php if (!empty($row["paymentDate"])): ?>
-                                <td><?php echo $row['paymentDate']; ?></td>
-                            <?php else: ?>
-                                <td><p>Pending</p></td>
-                            <?php endif; ?>
-                            <td>
-                                <a href="view.php?id=<?php echo $row['id']; ?>" class="btn btn-outline-success my-2 my-sm-0"><i class="fas fa-eye"></i></a>
-                                <a href="edit.php?id=<?php echo $row['id']; ?>" class="btn btn-warning"><i class="fas fa-edit" style="font-weight: normal;"></i></a>
-                                <a href="confirm.php?id=<?php echo $row['id']; ?>" class="btn btn"><img src="img/del.png" height="20px" width="20px"/></a>
-                            </td>
-                        </tr>
-                        <?php
-                    }
-                } else {
-                    echo "No members found.";
-                }
+    // Display the members table
+    while ($row = $result->fetch_assoc()) {
+        ?>
+        <tr>
+            <td><?php echo $count++; ?></td>
+            
+            <td><?php echo $row['EmpNo']; ?></td>
+            <td><?php echo $row['First_name']; ?></td>
+            <td><?php echo $row['Surname']; ?></td>
+            <?php if (!empty($row["Amount"])): ?>
+                <td><?php echo $row['Amount']; ?></td>
+            <?php else: ?>
+                <td><p>Pending</p></td>
+            <?php endif; ?>
+            <td>
+                <a href="view.php?id=<?php echo isset($row['id']) ? $row['id'] : ''; ?>" class="btn btn-outline-success"><i class="fas fa-eye"></i></a>
+                <a href="edit.php?id=<?php echo isset($row['id']) ? $row['id'] : ''; ?>" class="btn btn-warning"><i class="fas fa-edit"></i></a>
+                <a href="confirm.php?id=<?php echo isset($row['id']) ? $row['id'] : ''; ?>" class="btn btn-danger"><i class="fas fa-trash"></i></a>
+            </td>
+        </tr>
+        <?php
+    }
+} else {
+    echo "No members found.";
+}
 
-                // Pagination links
-                $sql = "SELECT COUNT(*) AS totalCount FROM members"; // Query to get the total number of rows
-                $totalResult = $conn->query($sql);
-                $totalRow = $totalResult->fetch_assoc()['totalCount'];
-                $totalPages = ceil($totalRow / $rowsPerPage);
+// Pagination links
+$sql = "SELECT COUNT(*) AS totalCount FROM members"; // Query to get the total number of rows
+$totalResult = $conn->query($sql);
+$totalRow = $totalResult->fetch_assoc()['totalCount'];
+$totalPages = ceil($totalRow / $rowsPerPage);
 
-                echo "<div class='pagination'>";
-                if ($currentPage > 1) {
-                    echo "<a href='?page=".($currentPage - 1)." ' class='btn btn-outline-success'>Previous page</a>";
-                }
-                if ($currentPage < $totalPages) {
-                    echo "<a href='?page=".($currentPage + 1)." 'class='btn btn-outline-success'>Next page</a>";
-                }
-                echo "</div>";
+echo "<div class='pagination'>";
+if ($currentPage > 1) {
+    echo "<a href='?page=".($currentPage - 1)."' class='btn btn-outline-success'>Previous page</a>";
+}
+if ($currentPage < $totalPages) {
+    echo "<a href='?page=".($currentPage + 1)."' class='btn btn-outline-success'>Next page</a>";
+}
+echo "</div>";
 
-                // Close the database connection
-                $conn->close();
-                
-                
-            ?>
-        </tbody>
-        </table>
-    </div>
-    </div>
-    </div>
-   
+// Close the database connection
+$conn->close();
+?>
+</tbody>
+</table>
+</div>
+</div>
+</div>
 
-    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
 
 </body>
 </html>

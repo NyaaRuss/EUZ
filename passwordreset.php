@@ -84,7 +84,7 @@ body {
     bottom: -80px;
 }
 form{
-    height: 650px;
+    height: 800px;
     width: 440px;
     background-color: rgba(255,255,255,0.13);
     position: absolute;
@@ -182,6 +182,10 @@ button{
             <label for="email">Email</label>
             <input type="email" name="email" placeholder="Enter your existing email" required>
         </div>
+        <div class="form-group">
+            <label for="role">Role</label>
+            <input type="text" placeholder="Enter role" id="role" name="role" required value="">
+        </div>
 
         <div class="form-group">
             <label for="new_password">New Password</label>
@@ -200,17 +204,24 @@ button{
 
     <script>
         function validatePasswords() {
-            var password = document.getElementById("new_password").value;
-            var confirmPassword = document.getElementById("confirm_new_password").value;
+        var password = document.getElementById("password").value;
+        var confirmPassword = document.getElementById("confirm_password").value;
+        var role = document.getElementById("role").value;
 
-            if (password !== confirmPassword) {
-                alert("Passwords do not match. Please re-enter.");
-                return false; // Prevent form submission
-            }
-
-            // If both conditions pass, allow form submission
-            return true;
+        if (password !== confirmPassword) {
+            alert("Passwords do not match. Please re-enter.");
+            return false; // Prevent form submission
         }
+
+        if (role !== "euz admin") {
+            alert("Role does not match. Please re-enter.");
+            return false; // Prevent form submission
+        }
+
+        // If both conditions pass, allow form submission
+        return true;
+    }
+
     </script>
 </body>
 </html>

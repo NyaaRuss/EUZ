@@ -123,11 +123,11 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
     <div class="container my-4">
         <header class="d-flex justify-content-between my-4">
             <div>
-                <a href="monthlypaid.php" class="btn btn-outline-success my-2 my-sm-0">Paid Payments</a>
+                <a href="rtgs_paytable.php" class="btn btn-outline-success my-2 my-sm-0">All RTGs Payments</a>
             </div>
 
             <div>
-                <a href="allpay.php" class="btn btn-outline-secondary my-2 my-sm-0">Uniform payments</a>
+                <a href="usd_payments.php" class="btn btn-outline-secondary my-2 my-sm-0">Add Monthly USD payment</a>
             </div>
 
             <div>
@@ -136,7 +136,7 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
         </header>
 
         <form method="GET" action="paysearch.php" class="search-form">
-            <input type="text" name="search" placeholder="Enter Date" class="search-input">
+            <input type="text" name="search" placeholder="Enter EmpNo" class="search-input">
             <button type="submit" class="search-button">Search</button>
         </form>
         <br>
@@ -188,7 +188,7 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
                 <th>EmpNo</th>
                 <th>First_name</th>
                 <th>Surname</th>
-                <th>Edited By</th>
+                
                 <th>Received USD</th>
                 
                 <th>Action</th>
@@ -197,84 +197,122 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
         <tbody>
         
         <?php
-            include('connect.php');
+include('connect.php');
 
-            // Define the number of records to display per page
-            $recordsPerPage = 20;
+// Define the number of records to display per page
+$recordsPerPage = 20;
 
-            // Get the current page number from the URL
-            if (isset($_GET['page']) && is_numeric($_GET['page'])) {
-                $currentPage = $_GET['page'];
-            } else {
-                $currentPage = 1;
-            }
+// Get the current page number from the URL
+if (isset($_GET['page']) && is_numeric($_GET['page'])) {
+    $currentPage = $_GET['page'];
+} else {
+    $currentPage = 1;
+}
 
-            // Calculate the offset for the database query
-            $offset = ($currentPage - 1) * $recordsPerPage;
+// Calculate the offset for the database query
+$offset = ($currentPage - 1) * $recordsPerPage;
 
-            // Prepare the SQL query to retrieve the records for the current page with pagination
-            $sqlSelect = "SELECT * FROM payments LIMIT $offset, $recordsPerPage";
-            $result = mysqli_query($conn, $sqlSelect);
+$currentMonth = date('m');
+$currentYear = date('Y');
 
-            // Check if the query executed successfully
-            if ($result) {
-                // Check if any records found
-                if (mysqli_num_rows($result) > 0) {
-                    // Display the records
-                    while ($data = mysqli_fetch_array($result)) {
-                        ?>
-                        <tr>
-                            <td><?php echo $data['paymentDate']; ?></td>
-                            <td><?php echo $data['id']; ?></td>
-                            <td><?php echo $data['EmpNo']; ?></td>
-                            <td><?php echo $data['First_name']; ?></td>
-                            <td><?php echo $data['Surname']; ?></td>
-                            
-                            <td><?php echo $data['RTGs']; ?></td>
-                            <td><?php echo $data['Amount']; ?></td>
-                            <td>
-                                <a href="view.php?id=<?php echo $data['id']; ?>" class="btn btn-outline-success"><i class="fas fa-eye"></i></a>
+// Handle form submission for selecting month
+if (isset($_POST['month'])) {
+    $selectedMonth = $_POST['month'];
+    $selectedYear = $_POST['year'];
+} else {
+    $selectedMonth = $currentMonth;
+    $selectedYear = $currentYear;
+}
 
-                            </td>
-                        </tr>
-                        <?php
-                    }
-                } else {
-                    echo "No records found.";
-                }
+// Prepare the SQL query to retrieve the records for the current page with pagination
+$sqlSelect = "SELECT * FROM usd_payments WHERE MONTH(paymentDate) = $selectedMonth AND YEAR(paymentDate) = $selectedYear LIMIT $offset, $recordsPerPage";
+$result = mysqli_query($conn, $sqlSelect);
 
-                // Calculate the total number of records
-                $totalRecordsQuery = "SELECT COUNT(*) as total FROM payments";
-                $totalResult = mysqli_query($conn, $totalRecordsQuery);
-                $totalRecords = mysqli_fetch_assoc($totalResult)['total'];
-
-                // Calculate the total number of pages
-                $totalPages = ceil($totalRecords / $recordsPerPage);
-
-                // Display pagination buttons
-                echo "<div class='pagination'>";
-
-                // Previous button
-                if ($currentPage > 1) {
-                    echo "<a href='paytable.php?page=" . ($currentPage - 1) . "' class='btn btn-outline-success'>Previous page</a>";
-                }
-
-                // Next button
-                if ($currentPage < $totalPages) {
-                    echo "<a href='paytable.php?page=" . ($currentPage + 1) . "' class='btn btn-outline-success'>Next page</a>";
-                }
-
-                echo "</div>";
-
-            } else {
-                echo "Error executing the query: " . mysqli_error($conn);
-            }
-
-            // Close the database connection
-            mysqli_close($conn);
+// Check if the query executed successfully
+if ($result) {
+    // Check if any records found
+    if (mysqli_num_rows($result) > 0) {
+        // Display the records
+        while ($data = mysqli_fetch_array($result)) {
             ?>
-        </tbody>
+            <tr>
+                <td><?php echo $data['paymentDate']; ?></td>
+                <td><?php echo $data['id']; ?></td>
+                <td><?php echo $data['EmpNo']; ?></td>
+                <td><?php echo $data['First_name']; ?></td>
+                <td><?php echo $data['Surname']; ?></td>
+
+
+                <td><?php echo $data['Amount']; ?></td>
+                <td>
+                    <a href="view.php?id=<?php echo $data['id']; ?>" class="btn btn-outline-success"><i class="fas fa-eye"></i></a>
+
+                </td>
+            </tr>
+            <?php
+        }
+    } else {
+        echo "No records found.";
+    }
+
+    // Calculate the total number of records
+    $totalRecordsQuery = "SELECT COUNT(*) as total FROM usd_payments WHERE MONTH(paymentDate) = $selectedMonth AND YEAR(paymentDate) = $selectedYear";
+    $totalResult = mysqli_query($conn, $totalRecordsQuery);
+    $totalRecords = mysqli_fetch_assoc($totalResult)['total'];
+
+    // Calculate the total number of pages
+    $totalPages = ceil($totalRecords / $recordsPerPage);
+
+    // Display pagination buttons
+    echo "<div class='pagination'>";
+
+    // Previous button
+    if ($currentPage > 1) {
+        echo "<a href='paytable.php?page=" . ($currentPage - 1) . "' class='btn btn-outline-success'>Previous page</a>";
+    }
+
+    // Next button
+    if ($currentPage < $totalPages) {
+        echo "<a href='paytable.php?page=" . ($currentPage + 1) . "' class='btn btn-outline-success'>Next page</a>";
+    }
+
+    echo "</div>";
+
+} else {
+    echo "Error executing the query: " . mysqli_error($conn);
+}
+
+// Close the database connection
+mysqli_close($conn);
+?>
+</tbody>
         </table>
+
+<!-- Form for selecting month -->
+<form method="post" action="">
+    <label for="month">Select Month:</label>
+    <select name="month" id="month">
+        <?php
+        for ($m = 1; $m <= 12; $m++) {
+            $monthName = date('F', mktime(0, 0, 0, $m, 1));
+            echo "<option value='$m' ".($m == $selectedMonth ? 'selected' : '').">$monthName</option>";
+        }
+        ?>
+    </select>
+    <label for="year">Select Year:</label>
+    <select name="year" id="year">
+        <?php
+        $startYear = date("Y") - 10; // Adjust this number as needed
+        $endYear = date("Y") + 10; // Adjust this number as needed
+        for ($year = $startYear; $year <= $endYear; $year++) {
+            echo "<option value='$year' ".($year == $selectedYear ? 'selected' : '').">$year</option>";
+        }
+        ?>
+    </select>
+    <input type="submit" value="Show Payments">
+</form>
+
+        
     </div>
     </div>
     </div>

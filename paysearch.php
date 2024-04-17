@@ -123,82 +123,118 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
     <div class="container my-4">
         <header class="d-flex justify-content-between my-4">
             <div>
-                <a href="paytable.php" class="btn btn-outline-secondary my-2 my-sm-0">All payments</a>
+                <a href="paytable.php" class="btn btn-outline-secondary my-2 my-sm-0">All USD Payments</a>
+            </div>
+            <div>
+                <a href="rtgs_paytable.php" class="btn btn-outline-success my-2 my-sm-0">All RTGs Payments</a>
             </div>    
             
         </header>
 
         <form method="GET" action="paysearch.php" class="search-form">
-            <input type="text" name="search" placeholder="Enter Date" class="search-input">
+            <input type="text" name="search" placeholder="Enter EmpNo" class="search-input">
             <button type="submit" class="search-button">Search</button>
         </form>
         <br>
 
-    <?php
-    // Assuming you have already established a database connection
-    include('connect.php');
-    // Check if the search term is provided
-    if (isset($_GET['search'])) {
-        // Define the search term
-        $searchTerm = $_GET['search'];
+        <?php
+// Assuming you have already established a database connection
+include('connect.php');
 
-        // Prepare the SQL query
-        $query = "SELECT * FROM payments WHERE paymentDate LIKE '%$searchTerm%' OR EmpNo LIKE '%$searchTerm%' OR Surname LIKE '%$searchTerm%' OR First_name LIKE '%$searchTerm%'"; // Replace your_table and column_name with your actual table and column names
+// Check if the search term is provided
+if (isset($_GET['search'])) {
+    // Define the search term
+    $searchTerm = $_GET['search'];
 
-        // Execute the query
-        $result = mysqli_query($conn, $query); // Replace $connection with your actual database connection variable
+    // Prepare the SQL query
+    $query = "SELECT * FROM usd_payments WHERE EmpNo LIKE '%$searchTerm%' OR paymentDate LIKE '%$searchTerm%' OR Surname LIKE '%$searchTerm%' OR First_name LIKE '%$searchTerm%'"; // Replace your_table and column_name with your actual table and column names
 
-        // Check if the query executed successfully
-        if ($result) {
-            // Check if any matching records found
-            if (mysqli_num_rows($result) > 0) {
-                // Display the table headers
-                echo "<div class='display_table'>";
-                echo "<table class='table'>";
-                echo "<tr>";
-                echo "<th>Payment Date</th>";
-                echo "<th>ID</th>";
-                echo "<th>EmpNo</th>";
-                echo "<th>First Name</th>";
-                echo "<th>Surname</th>";
-                echo "<th>Edited By</th>";
-                echo "<th>USD</th>";
-                echo "<th>Edit</th>";
-                echo "</tr>";
+    // Execute the query
+    $result = mysqli_query($conn, $query); // Replace $connection with your actual database connection variable
 
-                // Loop through the result set
-                while ($row = mysqli_fetch_assoc($result)) {
-                    // Process and display the search results in a table row
+    // Check if the query executed successfully
+    if ($result) {
+        // Pagination
+        $recordsPerPage = 20;
+        $totalRecords = mysqli_num_rows($result);
+        $totalPages = ceil($totalRecords / $recordsPerPage);
 
-                    echo "<tr>";
-                    echo "<td>" . $row['paymentDate'] . "</td>";
-                    echo "<td>" . $row['id'] . "</td>";
-                    echo "<td>" . $row['EmpNo'] . "</td>";
-                    echo "<td>" . $row['First_name'] . "</td>";
-                    echo "<td>" . $row['Surname'] . "</td>";
-                    echo "<td>" . $row['RTGs'] . "</td>";
-                    echo "<td>" . $row['Amount'] . "</td>";
-                    echo "<td>";
-                    echo "<a href='view.php?id=" . $row['id'] . "' class='btn btn-outline-success'><i class='fas fa-eye'></i></a>";
-                    echo "</td>";
-                    echo "</tr>";
-                }
-
-                // Close the table
-                echo "</table>";
-                echo "</div>";
-                    
-            } else {
-                echo "No matching records found.";
-            }
+        // Get the current page number from the URL
+        if (isset($_GET['page']) && is_numeric($_GET['page'])) {
+            $currentPage = $_GET['page'];
         } else {
-            echo "Error executing the search query: " . mysqli_error($conn);
+            $currentPage = 1;
         }
 
-        // Close the database connection
-        mysqli_close($conn);
+        // Calculate the offset for the database query
+        $offset = ($currentPage - 1) * $recordsPerPage;
+
+        // Adjust the query for pagination
+        $query .= " LIMIT $offset, $recordsPerPage";
+
+        // Execute the adjusted query
+        $result = mysqli_query($conn, $query);
+
+        // Check if any matching records found
+        if (mysqli_num_rows($result) > 0) {
+            // Display the table headers
+            echo "<div class='display_table'>";
+            echo "<table class='table'>";
+            echo "<tr>";
+            echo "<th>Payment Date</th>";
+            echo "<th>ID</th>";
+            echo "<th>EmpNo</th>";
+            echo "<th>First Name</th>";
+            echo "<th>Surname</th>";
+
+            echo "<th>USD</th>";
+            echo "<th>Edit</th>";
+            echo "</tr>";
+
+            // Loop through the result set
+            while ($row = mysqli_fetch_assoc($result)) {
+                // Process and display the search results in a table row
+
+                echo "<tr>";
+                echo "<td>" . $row['paymentDate'] . "</td>";
+                echo "<td>" . $row['id'] . "</td>";
+                echo "<td>" . $row['EmpNo'] . "</td>";
+                echo "<td>" . $row['First_name'] . "</td>";
+                echo "<td>" . $row['Surname'] . "</td>";
+
+                echo "<td>" . $row['Amount'] . "</td>";
+                echo "<td>";
+                echo "<a href='view.php?id=" . $row['id'] . "' class='btn btn-outline-success'><i class='fas fa-eye'></i></a>";
+                echo "</td>";
+                echo "</tr>";
+            }
+
+            // Close the table
+            echo "</table>";
+            echo "</div>";
+
+            // Pagination links
+            echo "<div class='pagination'>";
+            if ($currentPage > 1) {
+                echo "<a href='?search=$searchTerm&page=".($currentPage - 1)."' class='btn btn-outline-success'>Previous page</a>";
+            }
+            if ($currentPage < $totalPages) {
+                echo "<a href='?search=$searchTerm&page=".($currentPage + 1)."' class='btn btn-outline-success'>Next page</a>";
+            }
+            echo "</div>";
+
+        } else {
+            echo "No matching records found.";
+        }
+    } else {
+        echo "Error executing the search query: " . mysqli_error($conn);
     }
-    ?>
+
+    // Close the database connection
+    mysqli_close($conn);
+}
+?>
+
     <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
